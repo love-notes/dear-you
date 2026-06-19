@@ -323,8 +323,8 @@
     </div>
   </section>
 
-  <!-- Modal for Level 2 -->
-  <div id="modal2" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal2Title" aria-describedby="modal2Desc" style="display:none;">
+  <!-- Modal for Level 2 (removed inline display:none, controlled via .show) -->
+  <div id="modal2" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal2Title" aria-describedby="modal2Desc">
     <div class="modal">
       <h2 id="modal2Title">You Win!</h2>
       <p id="modal2Desc">Here's your secret key for Level 2:</p>
@@ -350,8 +350,8 @@
     </div>
   </section>
 
-  <!-- Modal for Level 3 -->
-  <div id="modal3" class="modal-overlay" role="dialog" aria-modal="true" style="display:none;">
+  <!-- Modal for Level 3 (removed inline display:none) -->
+  <div id="modal3" class="modal-overlay" role="dialog" aria-modal="true">
     <div class="modal">
       <h2>You Did It!</h2>
       <p>All sets found! Here's your secret key:</p>
@@ -606,7 +606,7 @@
               item.element.parentElement.removeChild(item.element);
             }
             caughtCount++;
-            liveRegion.textContent = You caught an item. ${TARGET_COUNT - caughtCount} items left.;
+            liveRegion.textContent = `You caught an item. ${TARGET_COUNT - caughtCount} items left.`;
             updateProgressVisual();
           } else if(item.y > gameArea.clientHeight + 40){
             // fell beyond bottom
@@ -901,13 +901,13 @@
           currentStreak = 1;
           score += 1;
           cardEl.classList.add('matched'); // visually mark as pressed/matched
-          MESSAGE_EL.textContent = Good start! Keep clicking ${clickedColor} cards!;
+          MESSAGE_EL.textContent = `Good start! Keep clicking ${clickedColor} cards!`;
         } else if(clickedColor === selectedColor){
           // same color -> increment streak
           currentStreak++;
           score += currentStreak;
           cardEl.classList.add('matched');
-          MESSAGE_EL.textContent = Nice! ${currentStreak} ${clickedColor} cards in a row!;
+          MESSAGE_EL.textContent = `Nice! ${currentStreak} ${clickedColor} cards in a row!`;
         } else {
           // different color selected -> reset previous matched visual marks (only visible ones)
           selectedColor = clickedColor;
@@ -921,7 +921,7 @@
           });
           // mark this card as matched (start new streak)
           cardEl.classList.add('matched');
-          MESSAGE_EL.textContent = Oops! Changed to ${clickedColor}. Streak reset.;
+          MESSAGE_EL.textContent = `Oops! Changed to ${clickedColor}. Streak reset.`;
         }
 
         // update score display
@@ -1029,16 +1029,20 @@
       }
 
       // close modal -> remove show
-      CLOSE_MODAL2.addEventListener('click', function(){
-        MODAL2.classList.remove('show');
-      });
+      if(CLOSE_MODAL2) {
+        CLOSE_MODAL2.addEventListener('click', function(){
+          MODAL2.classList.remove('show');
+        });
+      }
 
       // continue to level 3 button in modal
-      CONTINUE_TO3_BTN.addEventListener('click', function(){
-        MODAL2.classList.remove('show');
-        // show level 3 via top-level function
-        window.showLevel(3);
-      });
+      if(CONTINUE_TO3_BTN){
+        CONTINUE_TO3_BTN.addEventListener('click', function(){
+          MODAL2.classList.remove('show');
+          // show level 3 via top-level function
+          window.showLevel(3);
+        });
+      }
 
       // restart level 2 button on lose
       RESTART_LEVEL2_BTN.addEventListener('click', function(){
@@ -1131,7 +1135,7 @@
 
         // click handler
         card.addEventListener('click', function(){
-          if(!game3Started  lockClicks  card.classList.contains('matched') || card.classList.contains('flipped')) return;
+          if(!game3Started || lockClicks || card.classList.contains('matched') || card.classList.contains('flipped')) return;
           flipCard3(card);
         });
 
@@ -1182,7 +1186,7 @@
             c.classList.add('matched');
           });
           foundSets++;
-          infoText3.textContent = Good job! Sets found: ${foundSets} / ${TOTAL_SETS};
+          infoText3.textContent = `Good job! Sets found: ${foundSets} / ${TOTAL_SETS}`;
           flippedCards = [];
           lockClicks = false;
           if(foundSets === TOTAL_SETS){
@@ -1200,7 +1204,7 @@
             });
             flippedCards = [];
             lockClicks = false;
-            infoText3.textContent = Find all 3 sets! Sets found: ${foundSets} / ${TOTAL_SETS};
+            infoText3.textContent = `Find all 3 sets! Sets found: ${foundSets} / ${TOTAL_SETS}`;
           }, 900);
         }
       }
@@ -1209,8 +1213,9 @@
       function shufflePositions3(){
         let positions = [...Array(cards.length).keys()];
         shuffleArrayLocal(positions);
+        // assign random positions and sort accordingly
         cards.forEach((card, i) => card.dataset.position = positions[i]);
-        cards.sort((a,b) => a.dataset.position - b.dataset.position);
+        cards.sort((a,b) => (parseInt(a.dataset.position,10) - parseInt(b.dataset.position,10)));
         gameGrid.innerHTML = '';
         cards.forEach(card => gameGrid.appendChild(card));
       }
@@ -1218,11 +1223,11 @@
       // timer for level 3
       function startTimer3(){
         timer3 = TIME_LIMIT_3;
-        timerDisplay.textContent = Time Left: ${timer3}s;
+        timerDisplay.textContent = `Time Left: ${timer3}s`;
         if(timer3Id) clearInterval(timer3Id);
         timer3Id = setInterval(function(){
           timer3--;
-          timerDisplay.textContent = Time Left: ${timer3}s;
+          timerDisplay.textContent = `Time Left: ${timer3}s`;
           if(timer3 <= 0){
             clearInterval(timer3Id);
             endGame3(false);
@@ -1235,18 +1240,20 @@
         game3Started = false;
         if(timer3Id) { clearInterval(timer3Id); timer3Id = null; }
         if(won){
-          infoText3.textContent = You found all sets!;
+          infoText3.textContent = "You found all sets!";
           // show modal
-          modal3Overlay.classList.add('show');
+          if(modal3Overlay){
+            modal3Overlay.classList.add('show');
+          }
           // hide restart on win
           restartLevel3Btn.style.display = 'none';
           // Unlock level 3 already done earlier; now trigger final stage shortly after winner modal shows
           setTimeout(function(){
             // show final stage overlay directly (user asked for immediate final)
-            showFinalStage();
+            if(window.showFinalStage) window.showFinalStage();
           }, 600);
         } else {
-          infoText3.textContent = Oops, time's up! Try again!;
+          infoText3.textContent = "Oops, time's up! Try again!";
           // show simple alert and show restart button
           setTimeout(function(){
             // show restart inline
@@ -1257,7 +1264,8 @@
 
       // Initialize game 3: show emojis briefly, then hide, shuffle, start timer
       async function initGame3(){
-        infoText3.textContent = Memorize the emojis!;        timerDisplay.textContent = Time Left: ${TIME_LIMIT_3}s;
+        infoText3.textContent = "Memorize the emojis!";
+        timerDisplay.textContent = `Time Left: ${TIME_LIMIT_3}s`;
         foundSets = 0;
         flippedCards = [];
         game3Started = false;
@@ -1289,16 +1297,16 @@
         // ready to play
         lockClicks = false;
         game3Started = true;
-        infoText3.textContent = Find all 3 sets! Sets found: 0 / 3;
+        infoText3.textContent = `Find all 3 sets! Sets found: 0 / ${TOTAL_SETS}`;
         startTimer3();
       }
 
       // close modal for level3
-      closeModalBtn3.addEventListener('click', function(){
-        modal3Overlay.classList.remove('show');
-        // If final stage already shown, keep it; otherwise, if user closed modal before final shown, show final as well
-        // (we already trigger final on win above) - do nothing extra here.
-      });
+      if(closeModalBtn3){
+        closeModalBtn3.addEventListener('click', function(){
+          if(modal3Overlay) modal3Overlay.classList.remove('show');
+        });
+      }
 
       // restart button when lose
       restartLevel3Btn.addEventListener('click', function(){
@@ -1349,17 +1357,19 @@
       }
 
       // click handler for finalImage
-      finalImage.addEventListener('click', function(ev){
-        // spawn heart at click position (convert clientX/Y to within body)
-        const x = ev.clientX;
-        const y = ev.clientY;
-        spawnHeartAt(x, y);
-        clickCount++;
-        if(clickCount >= CLICK_TARGET){
-          // reveal letter and stop image
-          revealLetter();
-        }
-      });
+      if(finalImage){
+        finalImage.addEventListener('click', function(ev){
+          // spawn heart at click position (convert clientX/Y to within body)
+          const x = ev.clientX;
+          const y = ev.clientY;
+          spawnHeartAt(x, y);
+          clickCount++;
+          if(clickCount >= CLICK_TARGET){
+            // reveal letter and stop image
+            revealLetter();
+          }
+        });
+      }
 
       // spawn heart effect
       function spawnHeartAt(clientX, clientY){
@@ -1377,18 +1387,19 @@
       }
 
       // typewriter letter content (English, from girl to boy)
-      const LETTER_TEXT =
-It's been a year, and i still find myself grateful for you every day, Khalila. We've shared so many memories together, and every moment has meant more because it was with you. I’m truly grateful of everything we've been through and excited for everything that's still ahead of us. Here's to one amazing year and many more to come.
+      const LETTER_TEXT = `It's been a year, and I still find myself grateful for you every day, Khalila. We've shared so many memories together, and every moment has meant more because it was with you. I’m truly grateful for everything we've been through and excited for everything that's still ahead of us. Here's to one amazing year and many more to come.
 
-Cheers to our one-year anniversary. Here's to all the memories we've made and all the ones still waiting for us. I truly deeply love you more than anything, Khalila.;
+Cheers to our one-year anniversary. Here's to all the memories we've made and all the ones still waiting for us. I truly deeply love you more than anything, Khalila.`;
 
       // reveal letter with typewriter, show scrollable box
       function revealLetter(){
         // prevent multiple reveal
         if(finalLetterBox.style.display === 'block') return;
         // hide the clickable image (so clicks no longer count)
-        finalImage.style.pointerEvents = 'none';
-        finalImage.style.opacity = '0.6';
+        if(finalImage) {
+          finalImage.style.pointerEvents = 'none';
+          finalImage.style.opacity = '0.6';
+        }
         // start typing
         finalLetterBox.style.display = 'block';
         // ensure box focused so user can scroll with keyboard
